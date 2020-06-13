@@ -1,19 +1,19 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/grvlle/molly_installer/backend/install"
 	"github.com/leaanthony/mewn"
 	"github.com/wailsapp/wails"
 )
 
 func main() {
-	i, err := install.initInstall()
+
+	installer, err := install.Init()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(i)
+	installer.Run()
 
 	js := mewn.String("./frontend/dist/app.js")
 	css := mewn.String("./frontend/dist/app.css")
