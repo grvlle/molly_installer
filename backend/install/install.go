@@ -16,7 +16,6 @@ import (
 
 	"github.com/artdarek/go-unzip"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/windows/registry"
 )
 
 func init() {
@@ -357,15 +356,15 @@ func getOSSpecificSettings() *settings {
 }
 
 // setEnviornment sets env vars permenantly on Windows, but requires administrator access.
-func setEnvironment(key string, value string) {
-	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\ControlSet001\Control\Session Manager\Environment`, registry.ALL_ACCESS)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer k.Close()
+// func setEnvironment(key string, value string) {
+// 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\ControlSet001\Control\Session Manager\Environment`, registry.ALL_ACCESS)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer k.Close()
 
-	err = k.SetStringValue(key, value)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+// 	err = k.SetStringValue(key, value)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
