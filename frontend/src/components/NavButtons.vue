@@ -6,7 +6,7 @@
       <div align="center">
         <a class="btn_cancel" @click="getMessage">Cancel</a>
       </div>
-      <div align="center"><router-link to="/install"><a class="btn">Install ↠</a></router-link></div>
+      <div align="center"><router-link to="/install"><a @click="runInstaller" class="btn">Install ↠</a></router-link></div>
     </div>
   </div>
 </template>
@@ -19,11 +19,8 @@ export default {
     };
   },
   methods: {
-    getMessage: function() {
-      var self = this;
-      window.backend.basic().then((result) => {
-        self.message = result;
-      });
+    runInstaller: function() {
+      window.backend.runInstaller()
     },
   },
 };

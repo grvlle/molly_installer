@@ -1,7 +1,7 @@
 <template>
   <div class="component">
-      <p class="text">Downloading Molly Binaries...</p>
-    <progress-bar size="medium" font-size="1" text-fg-color="#fff" bar-color="#00F1B7" val="20" text="20%"></progress-bar>
+      <p class="text">{{this.$store.state.progressMsg}}</p>
+    <progress-bar size="medium" font-size="1" text-fg-color="#fff" bar-color="#00F1B7" :val=this.$store.state.progressPercent :text="this.$store.state.progressPercent + '%'"></progress-bar>
   </div>
 </template>
 

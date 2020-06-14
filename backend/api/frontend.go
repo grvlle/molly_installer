@@ -15,11 +15,11 @@ func (fe *Frontend) WailsInit(RT *wails.Runtime) {
 }
 
 func (fe *Frontend) sendStatusMsg(msg string) {
-	fe.RT.Events.Emit("progress", msg)
+	fe.RT.Events.Emit("status", msg)
 	return
 }
 
-func (fe *Frontend) sendProgress(percent int) {
+func (fe *Frontend) sendProgress(percent string) {
 	fe.RT.Events.Emit("progress", percent)
 	return
 }

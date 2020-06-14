@@ -70,34 +70,48 @@ func (i *Install) Run() {
 		}
 	}
 
-	initLogger()
+	initLogger() // log to .dag/install.log
 
+	// Install Java on Windows if not detected
+	if runtime.GOOS == "windows" && !javaInstalled() {
+		err = installJava()
+		if err != nil {
+			log.Fatal("Unable to install Java: %v", err)
+		}
+	}
+
+	// Remove old Molly Wallet artifacts
 	err = i.PrepareFS()
 	if err != nil {
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
 
+	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
 	if err != nil {
 		log.Fatalf("Unable to download v%s of Molly Wallet: %v", i.newVersion, err)
 	}
 
+	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
 	if err != nil || !ok {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
+	// Extract the contents
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
 	if err != nil {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
 
-	err = i.ReplaceAppBinary(contents)
+	// Copy the contents (mollywallet and update) to the .dag folder
+	err = i.CopyAppBinaries(contents)
 	if err != nil {
 		log.Errorf("Unable to overwrite old installation: %v", err)
 
 	}
 
+	// Lauch mollywallet
 	err = i.LaunchAppBinary()
 	if err != nil {
 		log.Errorf("Unable to start up Molly after Install: %v", err)
@@ -219,10 +233,8 @@ func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
 	return remoteChecksum == localChecksum, nil
 }
 
-// ReplaceAppBinary replaces the old Install module and molly binary with the newly downloaded ones.
-func (i *Install) ReplaceAppBinary(contents *unzippedContents) error {
-	// Replace old molly binary with the new one
-
+// CopyAppBinaries copies the update module and molly binary from the unzipped package to the .dag folder.
+func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 	err := copy(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
 	if err != nil {
 		for n := 5; n > 0; n-- {

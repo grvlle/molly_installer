@@ -8,12 +8,7 @@ import (
 
 func main() {
 
-	installer, err := install.Init()
-	if err != nil {
-		panic(err)
-	}
-
-	installer.Run()
+	api.sendProgress("42")
 
 	js := mewn.String("./frontend/dist/app.js")
 	css := mewn.String("./frontend/dist/app.css")
