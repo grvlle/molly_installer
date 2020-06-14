@@ -6,9 +6,17 @@ import (
 	"github.com/wailsapp/wails"
 )
 
-func main() {
+var installer *install.Install
 
-	api.sendProgress("42")
+func init() {
+	var err error
+	installer, err = install.Init()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func main() {
 
 	js := mewn.String("./frontend/dist/app.js")
 	css := mewn.String("./frontend/dist/app.css")
@@ -21,16 +29,13 @@ func main() {
 		CSS:    css,
 		Colour: "#131313",
 	})
+
+	app.Bind(installer)
 	app.Bind(runInstaller)
 	app.Run()
 
 }
 
 func runInstaller() {
-	installer, err := install.Init()
-	if err != nil {
-		panic(err)
-	}
-
 	installer.Run()
 }

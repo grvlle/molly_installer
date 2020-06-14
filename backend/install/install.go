@@ -16,6 +16,7 @@ import (
 
 	"github.com/artdarek/go-unzip"
 	log "github.com/sirupsen/logrus"
+	"github.com/wailsapp/wails"
 )
 
 // Install type contains the Install processes mandatory data
@@ -25,6 +26,7 @@ type Install struct {
 	tmpFolderPath      string
 	newVersion         string
 	OSSpecificSettings *settings
+	frontend           *wails.Runtime
 }
 
 type settings struct {
@@ -63,6 +65,8 @@ func Init() (*Install, error) {
 func (i *Install) Run() {
 	var err error
 
+	i.sendProgress("3")
+
 	if !fileExists(i.dagFolderPath) {
 		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
 		if err != nil {
@@ -72,6 +76,8 @@ func (i *Install) Run() {
 
 	initLogger() // log to .dag/install.log
 
+	i.sendProgress("8")
+
 	// Install Java on Windows if not detected
 	if runtime.GOOS == "windows" && !javaInstalled() {
 		err = installJava()
@@ -80,11 +86,15 @@ func (i *Install) Run() {
 		}
 	}
 
+	i.sendProgress("22")
+
 	// Remove old Molly Wallet artifacts
 	err = i.PrepareFS()
 	if err != nil {
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
+
+	i.sendProgress("26")
 
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
@@ -92,17 +102,23 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to download v%s of Molly Wallet: %v", i.newVersion, err)
 	}
 
+	i.sendProgress("41")
+
 	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
 	if err != nil || !ok {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
+	i.sendProgress("47")
+
 	// Extract the contents
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
 	if err != nil {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
+
+	i.sendProgress("62")
 
 	// Copy the contents (mollywallet and update) to the .dag folder
 	err = i.CopyAppBinaries(contents)
@@ -111,11 +127,15 @@ func (i *Install) Run() {
 
 	}
 
+	i.sendProgress("92")
+
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
 	if err != nil {
 		log.Errorf("Unable to start up Molly after Install: %v", err)
 	}
+
+	i.sendProgress("100")
 
 	// Clean up install artifacts
 	err = i.CleanUp()
