@@ -15,8 +15,6 @@ import (
 	"time"
 
 	"github.com/artdarek/go-unzip"
-	"github.com/go-ole/go-ole"
-	"github.com/go-ole/go-ole/oleutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -129,63 +127,27 @@ func initLogger() {
 // PrepareFS removes uneccesary artifacts from the installation process and creates .dag folder if missing
 func (i *Install) PrepareFS() error {
 
-	// TODO: Loop through the files instead. Too tired to fix this rn :D
+	// files slice will house the files that are to be removed before proceeding with installation.
+	files := make([]string, 8)
+	files = append(files, "cl-keytool.jar.tmp", "cl-keytool.jar", "cl-wallet.jar", "cl-wallet.jar.tmp", "mollywallet.zip", "mollywallet.zip.tmp", "Molly Wallet.lnk", "mollywallet.exe")
 
-	if fileExists(i.dagFolderPath + "/store.db") {
-		err := os.Remove(i.dagFolderPath + "/store.db")
+	for _, file := range files {
+		if fileExists(path.Join(i.dagFolderPath, file)) && file != "" {
+			err := os.Remove(path.Join(i.dagFolderPath, file))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// in case of a failed previous installation attempt, there may be extracted artifacts in .tmp
+	if fileExists(i.tmpFolderPath) {
+		err := os.RemoveAll(i.tmpFolderPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	if fileExists(i.dagFolderPath + "/cl-keytool.jar.tmp") {
-		err := os.Remove(i.dagFolderPath + "/cl-keytool.jar.tmp")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.dagFolderPath + "/cl-keytool.jar") {
-		err := os.Remove(i.dagFolderPath + "/cl-keytool.jar")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.dagFolderPath + "/cl-wallet.jar") {
-		err := os.Remove(i.dagFolderPath + "/cl-wallet.jar")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.dagFolderPath + "/cl-wallet.jar.tmp") {
-		err := os.Remove(i.dagFolderPath + "/cl-wallet.jar.tmp")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.dagFolderPath + "/mollywallet.zip") {
-		err := os.Remove(i.dagFolderPath + "/mollywallet.zip")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.dagFolderPath + "/mollywallet.zip.tmp") {
-		err := os.Remove(i.dagFolderPath + "/mollywallet.zip.tmp")
-		if err != nil {
-			return err
-		}
-	}
-
-	if fileExists(i.tmpFolderPath + "/new_build") {
-		err := os.RemoveAll(i.tmpFolderPath + "/new_build")
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -326,8 +288,8 @@ func (i *Install) CleanUp() error {
 		}
 	}
 
-	if fileExists(i.tmpFolderPath + "/new_build") {
-		err := os.RemoveAll(i.tmpFolderPath + "/new_build")
+	if fileExists(i.tmpFolderPath) {
+		err := os.RemoveAll(i.tmpFolderPath)
 		if err != nil {
 			return err
 		}
@@ -460,37 +422,6 @@ func getOSSpecificSettings() *settings {
 	}
 
 	return s
-}
-
-func createWindowsShortcuts(src, dst string) error {
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
-	defer ole.CoUninitialize()
-
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
-	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
-	if err != nil {
-		return err
-	}
-	defer oleShellObject.Release()
-	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
-	if err != nil {
-		return err
-	}
-	defer wshell.Release()
-	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", dst)
-	fmt.Println(dst + ".lnk")
-	if err != nil {
-		return err
-	}
-	idispatch := cs.ToIDispatch()
-	oleutil.PutProperty(idispatch, "TargetPath", src)
-	oleutil.CallMethod(idispatch, "Save")
-
-	return nil
 }
 
 // setEnviornment sets env vars permenantly on Windows, but requires administrator access.
