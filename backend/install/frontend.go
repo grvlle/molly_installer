@@ -1,11 +1,25 @@
 package install
 
-import "github.com/wailsapp/wails"
+import (
+	log "github.com/sirupsen/logrus"
+	"github.com/wailsapp/wails"
+)
 
-// WailsInit will be called automatically when the binary runs.
-func (i *Install) WailsInit(runtime *wails.Runtime) error {
-	i.frontend = runtime
-	return nil
+func (i *Install) startProgress() {
+	for {
+		select {
+		case percent := <-i.incrementProgressCh:
+			i.incrementProgress(percent)
+		case msg := <-i.progressMessageCh:
+			i.sendStatusMsg(msg)
+		}
+	}
+}
+
+func (i *Install) updateProgress(progress, progressMsg string) {
+	i.incrementProgressCh <- progress
+	i.progressMessageCh <- progressMsg
+	log.Infoln(progressMsg)
 }
 
 func (i *Install) sendStatusMsg(msg string) {
@@ -13,7 +27,13 @@ func (i *Install) sendStatusMsg(msg string) {
 	return
 }
 
-func (i *Install) sendProgress(percent string) {
+func (i *Install) incrementProgress(percent string) {
 	i.frontend.Events.Emit("progress", percent)
 	return
+}
+
+// WailsInit will be called automatically when the binary runs.
+func (i *Install) WailsInit(runtime *wails.Runtime) error {
+	i.frontend = runtime
+	return nil
 }

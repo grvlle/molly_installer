@@ -17,3 +17,5 @@ Wails.Init(() => {
 		render: h => h(App)
 	}).$mount('#app');
 });
+
+router.replace('/')

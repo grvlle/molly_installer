@@ -21,12 +21,14 @@ import (
 
 // Install type contains the Install processes mandatory data
 type Install struct {
-	downloadURL        string
-	dagFolderPath      string
-	tmpFolderPath      string
-	newVersion         string
-	OSSpecificSettings *settings
-	frontend           *wails.Runtime
+	downloadURL         string
+	dagFolderPath       string
+	tmpFolderPath       string
+	newVersion          string
+	incrementProgressCh chan string
+	progressMessageCh   chan string
+	OSSpecificSettings  *settings
+	frontend            *wails.Runtime
 }
 
 type settings struct {
@@ -52,11 +54,13 @@ func Init() (*Install, error) {
 	}
 
 	i := &Install{
-		downloadURL:        "https://github.com/grvlle/constellation_wallet/releases/download",
-		newVersion:         "1.1.9",
-		dagFolderPath:      path.Join(userHomeDir, ".dag"),
-		tmpFolderPath:      path.Join(userHomeDir, ".tmp"),
-		OSSpecificSettings: getOSSpecificSettings(),
+		downloadURL:         "https://github.com/grvlle/constellation_wallet/releases/download",
+		newVersion:          "1.1.9",
+		dagFolderPath:       path.Join(userHomeDir, ".dag"),
+		tmpFolderPath:       path.Join(userHomeDir, ".tmp"),
+		incrementProgressCh: make(chan string),
+		progressMessageCh:   make(chan string),
+		OSSpecificSettings:  getOSSpecificSettings(),
 	}
 	return i, err
 }
@@ -64,8 +68,6 @@ func Init() (*Install, error) {
 // Run is the main method that runs the full install.
 func (i *Install) Run() {
 	var err error
-
-	i.sendProgress("3")
 
 	if !fileExists(i.dagFolderPath) {
 		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
@@ -75,8 +77,9 @@ func (i *Install) Run() {
 	}
 
 	initLogger() // log to .dag/install.log
+	go i.startProgress()
 
-	i.sendProgress("8")
+	i.updateProgress("8", "Checking Java Installation...")
 
 	// Install Java on Windows if not detected
 	if runtime.GOOS == "windows" && !javaInstalled() {
@@ -86,7 +89,7 @@ func (i *Install) Run() {
 		}
 	}
 
-	i.sendProgress("22")
+	i.updateProgress("9", "Preparing filesystem...")
 
 	// Remove old Molly Wallet artifacts
 	err = i.PrepareFS()
@@ -94,7 +97,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
 
-	i.sendProgress("26")
+	i.updateProgress("15", "Downloading packages...")
 
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
@@ -102,7 +105,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to download v%s of Molly Wallet: %v", i.newVersion, err)
 	}
 
-	i.sendProgress("41")
+	i.updateProgress("58", "Verifying Checksum...")
 
 	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
@@ -110,7 +113,7 @@ func (i *Install) Run() {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
-	i.sendProgress("47")
+	i.updateProgress("67", "Exctracting contents...")
 
 	// Extract the contents
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
@@ -118,7 +121,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
 
-	i.sendProgress("62")
+	i.updateProgress("82", "Copy binaries...")
 
 	// Copy the contents (mollywallet and update) to the .dag folder
 	err = i.CopyAppBinaries(contents)
@@ -127,7 +130,7 @@ func (i *Install) Run() {
 
 	}
 
-	i.sendProgress("92")
+	i.updateProgress("97", "Launching Molly Wallet...")
 
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
@@ -135,13 +138,15 @@ func (i *Install) Run() {
 		log.Errorf("Unable to start up Molly after Install: %v", err)
 	}
 
-	i.sendProgress("100")
+	i.updateProgress("100", "Installation Complete!")
 
 	// Clean up install artifacts
 	err = i.CleanUp()
 	if err != nil {
 		log.Fatalf("Unable to clear previous local state: %v", err)
 	}
+
+	i.frontend.Window.Close()
 
 }
 

@@ -4,7 +4,8 @@
       <h1>{{ message }}</h1>
       <!-- <center><a @click="getMessage">Press Me!</a></center> -->
       <div align="center">
-        <a class="btn_cancel" @click="getMessage">Cancel</a>
+        
+        <a class="btn_cancel">Cancel</a>
       </div>
       <div align="center"><router-link to="/install"><a @click="runInstaller" class="btn">Install ↠</a></router-link></div>
     </div>

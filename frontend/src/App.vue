@@ -14,7 +14,8 @@ import "./assets/css/main.css";
 
 export default {
   name: "app",
-  components: {},
+  components: {
+  },
 
   mounted() {
     window.wails.Events.On("status", (msg) => {
