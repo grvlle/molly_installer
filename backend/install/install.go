@@ -24,7 +24,6 @@ type Install struct {
 	downloadURL         string
 	dagFolderPath       string
 	tmpFolderPath       string
-	newVersion          string
 	incrementProgressCh chan int
 	progressMessageCh   chan string
 	OSSpecificSettings  *settings
@@ -55,7 +54,6 @@ func Init() (*Install, error) {
 
 	i := &Install{
 		downloadURL:         "https://github.com/grvlle/constellation_wallet/releases/download",
-		newVersion:          "1.1.9",
 		dagFolderPath:       path.Join(userHomeDir, ".dag"),
 		tmpFolderPath:       path.Join(userHomeDir, ".tmp"),
 		incrementProgressCh: make(chan int),
@@ -103,7 +101,7 @@ func (i *Install) Run() {
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
 	if err != nil {
-		log.Fatalf("Unable to download v%s of Molly Wallet: %v", i.newVersion, err)
+		log.Fatalf("Unable to download Molly Wallet package: %v", err)
 	}
 
 	i.updateProgress(58, "Verifying Checksum...")
@@ -195,17 +193,21 @@ func (i *Install) PrepareFS() error {
 func (i *Install) DownloadAppBinary() (string, error) {
 
 	filename := "mollywallet.zip"
+	version, err := i.getLatestRelease()
+	if err != nil {
+		return "", err
+	}
 
 	if i.OSSpecificSettings.osBuild == "unsupported" {
 		return "", fmt.Errorf("the OS is not supported")
 	}
 
-	url := i.downloadURL + "/v" + i.newVersion + "-" + i.OSSpecificSettings.osBuild + "/" + filename
+	url := i.downloadURL + "/v" + version + "-" + i.OSSpecificSettings.osBuild + "/" + filename
 	// e.g https://github.com/grvlle/constellation_wallet/releases/download/v1.1.9-linux/mollywallet.zip
 	log.Infof("Constructed the following URL: %s", url)
 
 	filePath := path.Join(i.dagFolderPath, filename)
-	err := downloadFile(url, filePath)
+	err = downloadFile(url, filePath)
 	if err != nil {
 		return "", fmt.Errorf("unable to download remote checksum: %v", err)
 	}
@@ -218,17 +220,21 @@ func (i *Install) DownloadAppBinary() (string, error) {
 func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
 	// Download checksum
 	filename := "checksum.sha256"
+	version, err := i.getLatestRelease()
+	if err != nil {
+		return false, err
+	}
 
 	if i.OSSpecificSettings.osBuild == "unsupported" {
 		return false, fmt.Errorf("the OS is not supported")
 	}
 
-	url := i.downloadURL + "/v" + i.newVersion + "-" + i.OSSpecificSettings.osBuild + "/" + filename
+	url := i.downloadURL + "/v" + version + "-" + i.OSSpecificSettings.osBuild + "/" + filename
 	// e.g https://github.com/grvlle/constellation_wallet/releases/download/v1.1.9-linux/checksum.sha256
 	log.Infof("Constructed the following URL: %s", url)
 
 	filePath := path.Join(i.dagFolderPath, filename)
-	err := downloadFile(url, filePath)
+	err = downloadFile(url, filePath)
 	if err != nil {
 		return false, fmt.Errorf("unable to download remote checksum: %v", err)
 	}
