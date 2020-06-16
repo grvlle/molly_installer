@@ -25,7 +25,7 @@ type Install struct {
 	dagFolderPath       string
 	tmpFolderPath       string
 	newVersion          string
-	incrementProgressCh chan string
+	incrementProgressCh chan int
 	progressMessageCh   chan string
 	OSSpecificSettings  *settings
 	frontend            *wails.Runtime
@@ -58,7 +58,7 @@ func Init() (*Install, error) {
 		newVersion:          "1.1.9",
 		dagFolderPath:       path.Join(userHomeDir, ".dag"),
 		tmpFolderPath:       path.Join(userHomeDir, ".tmp"),
-		incrementProgressCh: make(chan string),
+		incrementProgressCh: make(chan int),
 		progressMessageCh:   make(chan string),
 		OSSpecificSettings:  getOSSpecificSettings(),
 	}
@@ -79,17 +79,18 @@ func (i *Install) Run() {
 	initLogger() // log to .dag/install.log
 	go i.startProgress()
 
-	i.updateProgress("8", "Checking Java Installation...")
+	i.updateProgress(8, "Checking Java Installation...")
 
 	// Install Java on Windows if not detected
 	if runtime.GOOS == "windows" && !javaInstalled() {
+		i.updateProgress(10, "Java not found. Installing Java...")
 		err = installJava()
 		if err != nil {
 			log.Fatal("Unable to install Java: %v", err)
 		}
 	}
 
-	i.updateProgress("9", "Preparing filesystem...")
+	i.updateProgress(33, "Preparing filesystem...")
 
 	// Remove old Molly Wallet artifacts
 	err = i.PrepareFS()
@@ -97,7 +98,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
 
-	i.updateProgress("15", "Downloading packages...")
+	i.updateProgress(35, "Downloading packages...")
 
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
@@ -105,7 +106,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to download v%s of Molly Wallet: %v", i.newVersion, err)
 	}
 
-	i.updateProgress("58", "Verifying Checksum...")
+	i.updateProgress(58, "Verifying Checksum...")
 
 	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
@@ -113,7 +114,7 @@ func (i *Install) Run() {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
-	i.updateProgress("67", "Exctracting contents...")
+	i.updateProgress(67, "Exctracting contents...")
 
 	// Extract the contents
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
@@ -121,7 +122,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
 
-	i.updateProgress("82", "Copy binaries...")
+	i.updateProgress(82, "Copy binaries...")
 
 	// Copy the contents (mollywallet and update) to the .dag folder
 	err = i.CopyAppBinaries(contents)
@@ -130,7 +131,7 @@ func (i *Install) Run() {
 
 	}
 
-	i.updateProgress("97", "Launching Molly Wallet...")
+	i.updateProgress(97, "Launching Molly Wallet...")
 
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
@@ -138,7 +139,7 @@ func (i *Install) Run() {
 		log.Errorf("Unable to start up Molly after Install: %v", err)
 	}
 
-	i.updateProgress("100", "Installation Complete!")
+	i.updateProgress(100, "Installation Complete!")
 
 	// Clean up install artifacts
 	err = i.CleanUp()

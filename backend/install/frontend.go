@@ -1,14 +1,28 @@
 package install
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails"
 )
 
 func (i *Install) startProgress() {
+
+	var percent int
+
+	go func() {
+		for n := 0; n < 100; n++ {
+			percent++
+			time.Sleep(300 * time.Millisecond)
+			i.incrementProgress(percent)
+		}
+	}()
+
 	for {
+
 		select {
-		case percent := <-i.incrementProgressCh:
+		case percent = <-i.incrementProgressCh:
 			i.incrementProgress(percent)
 		case msg := <-i.progressMessageCh:
 			i.sendStatusMsg(msg)
@@ -16,7 +30,7 @@ func (i *Install) startProgress() {
 	}
 }
 
-func (i *Install) updateProgress(progress, progressMsg string) {
+func (i *Install) updateProgress(progress int, progressMsg string) {
 	i.incrementProgressCh <- progress
 	i.progressMessageCh <- progressMsg
 	log.Infoln(progressMsg)
@@ -27,7 +41,7 @@ func (i *Install) sendStatusMsg(msg string) {
 	return
 }
 
-func (i *Install) incrementProgress(percent string) {
+func (i *Install) incrementProgress(percent int) {
 	i.frontend.Events.Emit("progress", percent)
 	return
 }

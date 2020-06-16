@@ -32,7 +32,7 @@ body{
 }
 
 .logo {
-  flex: 1;
+  
   object-fit: contain;
   max-width: 16em;
   max-height: 16em;

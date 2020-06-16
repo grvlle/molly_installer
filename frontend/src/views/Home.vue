@@ -23,7 +23,7 @@ export default {
 <style>
 .container {
   display: flex; /* establish flex container */
-  flex: 1;
+  flex: 3;
   flex-direction: column; /* make main axis vertical */
   justify-content: center; /* center items vertically, in this case */
   align-items: center; /* center items horizontally, in this case */

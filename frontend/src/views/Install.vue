@@ -1,7 +1,14 @@
 <template>
   <div class="component">
-      <p class="text">{{this.$store.state.progressMsg}}</p>
-    <progress-bar size="medium" font-size="1" text-fg-color="#fff" bar-color="#00F1B7" :val=this.$store.state.progressPercent :text="this.$store.state.progressPercent + '%'"></progress-bar>
+    <p class="text">{{ this.$store.state.progressMsg }}</p>
+    <progress-bar
+      size="medium"
+      font-size="1"
+      text-fg-color="#fff"
+      bar-color="#00F1B7"
+      :val="this.$store.state.progressPercent.toString()"
+      :text="this.$store.state.progressPercent.toString() + '%'"
+    ></progress-bar>
   </div>
 </template>
 
@@ -21,11 +28,11 @@ export default {
 <style>
 .component {
   flex: 1;
-  
+
   width: 100%;
 }
 .text {
-    margin-top: 4em;
-    font-size: 0.7em;
+  margin-top: 4em;
+  font-size: 0.7em;
 }
 </style>
