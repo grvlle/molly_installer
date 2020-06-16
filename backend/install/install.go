@@ -104,7 +104,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to download Molly Wallet package: %v", err)
 	}
 
-	i.updateProgress(58, "Verifying Checksum...")
+	i.updateProgress(54, "Verifying Checksum...")
 
 	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
@@ -112,7 +112,7 @@ func (i *Install) Run() {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
-	i.updateProgress(67, "Exctracting contents...")
+	i.updateProgress(57, "Exctracting contents...")
 
 	// Extract the contents
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
@@ -120,7 +120,7 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
 
-	i.updateProgress(82, "Copy binaries...")
+	i.updateProgress(59, "Copy binaries...")
 
 	// Copy the contents (mollywallet and update) to the .dag folder
 	err = i.CopyAppBinaries(contents)
@@ -129,15 +129,19 @@ func (i *Install) Run() {
 
 	}
 
-	i.updateProgress(97, "Launching Molly Wallet...")
+	i.updateProgress(62, "Downloading the wallet SDK...")
+	err = i.checkAndFetchWalletCLI()
+	if err != nil {
+		log.Errorf("Unable to download CL files: %v", err)
+	}
+
+	i.updateProgress(100, "Installation Complete!")
 
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
 	if err != nil {
 		log.Errorf("Unable to start up Molly after Install: %v", err)
 	}
-
-	i.updateProgress(100, "Installation Complete!")
 
 	// Clean up install artifacts
 	err = i.CleanUp()

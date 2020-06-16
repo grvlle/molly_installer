@@ -16,6 +16,9 @@ func (i *Install) startProgress() {
 			percent++
 			time.Sleep(300 * time.Millisecond)
 			i.incrementProgress(percent)
+			if n == 97 {
+				return
+			}
 		}
 	}()
 
