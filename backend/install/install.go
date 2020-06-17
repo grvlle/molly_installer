@@ -77,9 +77,8 @@ func (i *Install) Run() {
 	initLogger() // log to .dag/install.log
 	go i.startProgress()
 
-	i.updateProgress(8, "Checking Java Installation...")
-
 	// Install Java on Windows if not detected
+	i.updateProgress(8, "Checking Java Installation...")
 	if runtime.GOOS == "windows" && !javaInstalled() {
 		i.updateProgress(10, "Java not found. Installing Java...")
 		err = installJava()
@@ -88,15 +87,11 @@ func (i *Install) Run() {
 		}
 	}
 
-	i.updateProgress(33, "Preparing filesystem...")
-
 	// Remove old Molly Wallet artifacts
 	err = i.PrepareFS()
 	if err != nil {
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
-
-	i.updateProgress(35, "Downloading packages...")
 
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
 	zippedArchive, err := i.DownloadAppBinary()
@@ -104,23 +99,18 @@ func (i *Install) Run() {
 		log.Fatalf("Unable to download Molly Wallet package: %v", err)
 	}
 
-	i.updateProgress(54, "Verifying Checksum...")
-
 	// Verify the integrity of the package
 	ok, err := i.VerifyChecksum(zippedArchive)
 	if err != nil || !ok {
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
-	i.updateProgress(57, "Exctracting contents...")
-
 	// Extract the contents
+	i.updateProgress(57, "Exctracting contents...")
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
 	if err != nil {
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
-
-	i.updateProgress(59, "Copy binaries...")
 
 	// Copy the contents (mollywallet and update) to the .dag folder
 	err = i.CopyAppBinaries(contents)
@@ -129,13 +119,13 @@ func (i *Install) Run() {
 
 	}
 
-	i.updateProgress(62, "Downloading the wallet SDK...")
 	err = i.checkAndFetchWalletCLI()
 	if err != nil {
 		log.Errorf("Unable to download CL files: %v", err)
 	}
 
 	i.updateProgress(100, "Installation Complete!")
+	time.Sleep(5 * time.Second)
 
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
@@ -168,7 +158,7 @@ func initLogger() {
 
 // PrepareFS removes uneccesary artifacts from the installation process and creates .dag folder if missing
 func (i *Install) PrepareFS() error {
-
+	i.updateProgress(33, "Preparing filesystem...")
 	// files slice will house the files that are to be removed before proceeding with installation.
 	files := make([]string, 8)
 	files = append(files, "cl-keytool.jar.tmp", "cl-keytool.jar", "cl-wallet.jar", "cl-wallet.jar.tmp", "mollywallet.zip", "mollywallet.zip.tmp", "Molly Wallet.lnk", "mollywallet.exe")
@@ -195,6 +185,7 @@ func (i *Install) PrepareFS() error {
 
 // DownloadAppBinary downloads the latest Molly Wallet zip from github releases and returns the path to it
 func (i *Install) DownloadAppBinary() (string, error) {
+	i.updateProgress(35, "Downloading packages...")
 
 	filename := "mollywallet.zip"
 	version, err := i.getLatestRelease()
@@ -222,6 +213,8 @@ func (i *Install) DownloadAppBinary() (string, error) {
 // VerifyChecksum takes a file path and will check the file sha256 checksum against the checksum included
 // in the downlaod. Returns false if there's a missmatch.
 func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
+	i.updateProgress(54, "Verifying Checksum...")
+
 	// Download checksum
 	filename := "checksum.sha256"
 	version, err := i.getLatestRelease()
@@ -271,6 +264,7 @@ func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
 
 // CopyAppBinaries copies the update module and molly binary from the unzipped package to the .dag folder.
 func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
+	i.updateProgress(59, "Copy binaries...")
 	err := copy(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
 	if err != nil {
 		for n := 5; n > 0; n-- {

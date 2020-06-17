@@ -12,13 +12,10 @@ func (i *Install) startProgress() {
 	var percent int
 
 	go func() {
-		for n := 0; n < 100; n++ {
+		for percent < 97 {
 			percent++
 			time.Sleep(300 * time.Millisecond)
 			i.incrementProgress(percent)
-			if n == 97 {
-				return
-			}
 		}
 	}()
 

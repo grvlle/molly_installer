@@ -123,6 +123,9 @@ func installJava() error {
 
 func javaInstalled() bool {
 	javaPath, err := detectJavaPath()
+	if javaPath == "" {
+		return false
+	}
 	if err != nil {
 		log.Errorln(err)
 	}
