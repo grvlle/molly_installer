@@ -11,7 +11,6 @@ import (
 // CheckAndFetchWalletCLI will download the cl-wallet dependencies from
 // the official Constellation Repo
 func (i *Install) checkAndFetchWalletCLI() error {
-	i.updateProgress(62, "Downloading the wallet SDK...")
 
 	var downloadComplete bool
 

@@ -2,6 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import Home from "@/views/Home";
 import Install from "@/views/Install";
+import Uninstall from "@/views/Uninstall";
 
 Vue.use(Router);
 
@@ -17,6 +18,11 @@ const router = new Router({
       path: "/install",
       name: "Install",
       component: Install,
+    },
+    {
+      path: "/uninstall",
+      name: "Uninstall",
+      component: Uninstall,
     },
   ],
 });

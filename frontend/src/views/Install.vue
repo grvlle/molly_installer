@@ -25,11 +25,11 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .component {
   flex: 1;
 
-  width: 100%;
+  width: 23em;
 }
 .text {
   margin-top: 4em;

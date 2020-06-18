@@ -5,7 +5,7 @@
       <!-- <center><a @click="getMessage">Press Me!</a></center> -->
       <div align="center">
         
-        <a class="btn_cancel">Cancel</a>
+        <router-link to="/uninstall"><a @click="runUninstaller" class="btn_cancel">Uninstall</a></router-link>
       </div>
       <div align="center"><router-link to="/install"><a @click="runInstaller" class="btn">Install ↠</a></router-link></div>
     </div>
@@ -22,6 +22,9 @@ export default {
   methods: {
     runInstaller: function() {
       window.backend.runInstaller()
+    },
+    runUninstaller: function() {
+      window.backend.runUninstaller()
     },
   },
 };
@@ -60,9 +63,9 @@ export default {
   color: #f7f7f7 !important;
   text-transform: uppercase;
   text-decoration: none;
-  background: #5a5a5a;
+  background: #c22626;
   padding: 20px;
-  border: 4px solid #494949 !important;
+  border: 4px solid #a53f3f !important;
   display: block;
   transition: all 0.4s ease 0s;
   cursor: pointer;

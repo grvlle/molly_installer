@@ -14,7 +14,7 @@ func (i *Install) startProgress() {
 	go func() {
 		for percent < 97 {
 			percent++
-			time.Sleep(300 * time.Millisecond)
+			time.Sleep(700 * time.Millisecond)
 			i.incrementProgress(percent)
 		}
 	}()
@@ -44,6 +44,14 @@ func (i *Install) sendStatusMsg(msg string) {
 func (i *Install) incrementProgress(percent int) {
 	i.frontend.Events.Emit("progress", percent)
 	return
+}
+
+func (i *Install) sendErrorNotification(title, msg string) {
+	i.frontend.Events.Emit("error", title, msg)
+}
+
+func (i *Install) sendSuccessNotification(title, msg string) {
+	i.frontend.Events.Emit("success", title, msg)
 }
 
 // WailsInit will be called automatically when the binary runs.

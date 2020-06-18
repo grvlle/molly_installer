@@ -10,6 +10,7 @@ var installer *install.Install
 
 func init() {
 	var err error
+
 	installer, err = install.Init()
 	if err != nil {
 		panic(err)
@@ -33,10 +34,17 @@ func main() {
 
 	app.Bind(installer)
 	app.Bind(runInstaller)
+	app.Bind(runUninstaller)
 	app.Run()
 
 }
 
+// Called from frontend
 func runInstaller() {
 	installer.Run()
+}
+
+// Called from frontend
+func runUninstaller() {
+	installer.Uninstall()
 }

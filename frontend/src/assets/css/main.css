@@ -8,7 +8,6 @@
   align-items: center; /* center items horizontally, in this case */
 
   background: url("../images/nodes2_dark.jpg");
-  
 
   /* Full height */
   position: absolute;
@@ -27,31 +26,51 @@ html {
   overflow: hidden;
 }
 
-body{
+body {
   margin: 0;
 }
 
 .logo {
-  
+  display: flex;
   object-fit: contain;
-  max-width: 16em;
-  max-height: 16em;
+  max-width: 13em;
+  max-height: 13em;
   min-width: 10em;
   min-height: 10em;
-  margin: auto;
+  position: fixed;
+  left: 50%;
+  top: 23%;
+  transform: translate(-50%, -50%);
 }
 
 .box {
   display: flex; /* establish flex container */
-  flex: 1;
+  flex: 3;
   flex-direction: column; /* make main axis vertical */
   align-items: center;
+  
 
   margin: auto;
 }
 
+.info-text-box {
+  display: flex; /* establish flex container */
+  flex: 3;
+  align-items: center;
+  width: 40em;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .info-text {
-  margin: 2em;
+  margin-top: 6em;
+  margin-bottom: 2em;
+}
+
+p.header {
+  text-align: center;
 }
 
 /* roboto-regular - latin */

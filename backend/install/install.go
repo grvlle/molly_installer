@@ -70,12 +70,14 @@ func (i *Install) Run() {
 	if !fileExists(i.dagFolderPath) {
 		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
 		if err != nil {
+			i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
+			time.Sleep(10 * time.Second)
 			log.Fatalf("Unable to prepare filesystem: %v", err)
 		}
 	}
 
-	initLogger() // log to .dag/install.log
-	go i.startProgress()
+	initLogger()         // log to .dag/install.log
+	go i.startProgress() // Runs a go routine that increments the progress bar
 
 	// Install Java on Windows if not detected
 	i.updateProgress(8, "Checking Java Installation...")
@@ -83,59 +85,81 @@ func (i *Install) Run() {
 		i.updateProgress(10, "Java not found. Installing Java...")
 		err = installJava()
 		if err != nil {
+			i.sendErrorNotification("Unable to install Java", fmt.Sprintf("%v", err))
+			time.Sleep(10 * time.Second)
 			log.Fatal("Unable to install Java: %v", err)
 		}
 	}
 
 	// Remove old Molly Wallet artifacts
+	i.updateProgress(33, "Preparing filesystem...")
 	err = i.PrepareFS()
 	if err != nil {
+		i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
 		log.Fatalf("Unable to prepare filesystem: %v", err)
 	}
 
 	// Download the mollywallet.zip from https://github.com/grvlle/constellation_wallet/
+	i.updateProgress(35, "Downloading packages...")
 	zippedArchive, err := i.DownloadAppBinary()
 	if err != nil {
+		i.sendErrorNotification("Unable to download Molly Wallet package", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
 		log.Fatalf("Unable to download Molly Wallet package: %v", err)
 	}
 
+	i.updateProgress(42, "Downloading the wallet SDK...")
+	err = i.checkAndFetchWalletCLI()
+	if err != nil {
+		i.sendErrorNotification("Unable to download CL files", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
+		log.Errorf("Unable to download CL files: %v", err)
+	}
+
 	// Verify the integrity of the package
+	i.updateProgress(86, "Verifying Checksum...")
 	ok, err := i.VerifyChecksum(zippedArchive)
 	if err != nil || !ok {
+		i.sendErrorNotification("Checksum missmatch. Corrupted download", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
 		log.Fatalf("Checksum missmatch. Corrupted download: %v", err)
 	}
 
 	// Extract the contents
-	i.updateProgress(57, "Exctracting contents...")
+	i.updateProgress(95, "Exctracting contents...")
 	contents, err := unzipArchive(zippedArchive, i.tmpFolderPath)
 	if err != nil {
+		i.sendErrorNotification("Unable to unzip contents", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
 		log.Fatalf("Unable to unzip contents: %v", err)
 	}
 
 	// Copy the contents (mollywallet and update) to the .dag folder
+	i.updateProgress(98, "Copy binaries...")
 	err = i.CopyAppBinaries(contents)
 	if err != nil {
+		i.sendErrorNotification("Unable to overwrite old installation", fmt.Sprintf("%v", err))
 		log.Errorf("Unable to overwrite old installation: %v", err)
 
 	}
 
-	err = i.checkAndFetchWalletCLI()
-	if err != nil {
-		log.Errorf("Unable to download CL files: %v", err)
-	}
-
-	i.updateProgress(100, "Installation Complete!")
+	i.updateProgress(100, "Installation Complete! Launching Molly Wallet...")
+	i.sendSuccessNotification("Success!", "Molly wallet has been successfully installed.")
 	time.Sleep(5 * time.Second)
 
 	// Lauch mollywallet
 	err = i.LaunchAppBinary()
 	if err != nil {
+		i.sendErrorNotification("Unable to start up Molly after Install", fmt.Sprintf("%v", err))
 		log.Errorf("Unable to start up Molly after Install: %v", err)
 	}
 
 	// Clean up install artifacts
 	err = i.CleanUp()
 	if err != nil {
+		i.sendErrorNotification("Unable to clear previous local state", fmt.Sprintf("%v", err))
+		time.Sleep(10 * time.Second)
 		log.Fatalf("Unable to clear previous local state: %v", err)
 	}
 
@@ -158,19 +182,11 @@ func initLogger() {
 
 // PrepareFS removes uneccesary artifacts from the installation process and creates .dag folder if missing
 func (i *Install) PrepareFS() error {
-	i.updateProgress(33, "Preparing filesystem...")
 	// files slice will house the files that are to be removed before proceeding with installation.
 	files := make([]string, 8)
 	files = append(files, "cl-keytool.jar.tmp", "cl-keytool.jar", "cl-wallet.jar", "cl-wallet.jar.tmp", "mollywallet.zip", "mollywallet.zip.tmp", "Molly Wallet.lnk", "mollywallet.exe")
 
-	for _, file := range files {
-		if fileExists(path.Join(i.dagFolderPath, file)) && file != "" {
-			err := os.Remove(path.Join(i.dagFolderPath, file))
-			if err != nil {
-				return err
-			}
-		}
-	}
+	removeFiles(i.dagFolderPath, files)
 
 	// in case of a failed previous installation attempt, there may be extracted artifacts in .tmp
 	if fileExists(i.tmpFolderPath) {
@@ -185,7 +201,6 @@ func (i *Install) PrepareFS() error {
 
 // DownloadAppBinary downloads the latest Molly Wallet zip from github releases and returns the path to it
 func (i *Install) DownloadAppBinary() (string, error) {
-	i.updateProgress(35, "Downloading packages...")
 
 	filename := "mollywallet.zip"
 	version, err := i.getLatestRelease()
@@ -213,7 +228,6 @@ func (i *Install) DownloadAppBinary() (string, error) {
 // VerifyChecksum takes a file path and will check the file sha256 checksum against the checksum included
 // in the downlaod. Returns false if there's a missmatch.
 func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
-	i.updateProgress(54, "Verifying Checksum...")
 
 	// Download checksum
 	filename := "checksum.sha256"
@@ -264,7 +278,6 @@ func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
 
 // CopyAppBinaries copies the update module and molly binary from the unzipped package to the .dag folder.
 func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
-	i.updateProgress(59, "Copy binaries...")
 	err := copy(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
 	if err != nil {
 		for n := 5; n > 0; n-- {
@@ -316,19 +329,10 @@ func (i *Install) LaunchAppBinary() error {
 // CleanUp removes uneccesary artifacts from the Install process
 func (i *Install) CleanUp() error {
 
-	if fileExists(i.dagFolderPath + "/mollywallet.zip") {
-		err := os.Remove(i.dagFolderPath + "/mollywallet.zip")
-		if err != nil {
-			return err
-		}
-	}
+	files := make([]string, 2)
+	files = append(files, "mollywallet.zip", "checksum.sha256")
 
-	if fileExists(i.dagFolderPath + "/checksum.sha256") {
-		err := os.Remove(i.dagFolderPath + "/checksum.sha256")
-		if err != nil {
-			return err
-		}
-	}
+	removeFiles(i.dagFolderPath, files)
 
 	if fileExists(i.tmpFolderPath) {
 		err := os.RemoveAll(i.tmpFolderPath)
