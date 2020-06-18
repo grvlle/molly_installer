@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path"
 	"runtime"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Uninstall will Uninstall the application by removing the files located
@@ -16,11 +14,12 @@ import (
 func (i *Install) Uninstall() {
 
 	files := make([]string, 12)
-	files = append(files, "update.log", "wallet.log", "install.log", "store.db", "cl-keytool.jar.tmp", "cl-keytool.jar", "cl-wallet.jar", "cl-wallet.jar.tmp", "mollywallet.zip", "mollywallet.zip.tmp", "Molly Wallet.lnk", "mollywallet.exe")
+	files = append(files, "update.log", "wallet.log", "store.db", "cl-keytool.jar.tmp", "cl-keytool.jar", "cl-wallet.jar", "cl-wallet.jar.tmp", "mollywallet.zip", "mollywallet.zip.tmp", "Molly Wallet.lnk", "mollywallet.exe")
 
 	err := removeFiles(i.dagFolderPath, files)
 	if err != nil {
-		i.sendErrorNotification("Unable to remove all files", fmt.Sprintf("%v", err))
+		i.sendErrorNotification("Error:", convertErrorToString(err))
+		fmt.Println(err)
 	}
 
 	folders := make([]string, 3)
@@ -28,19 +27,18 @@ func (i *Install) Uninstall() {
 
 	err = removeFolders(folders)
 	if err != nil {
-		i.sendErrorNotification("Unable to remove all folders", fmt.Sprintf("%v", err))
+		i.sendErrorNotification("Error:", convertErrorToString(err))
+		fmt.Println(err)
 	}
 
 	if runtime.GOOS == "windows" {
 		err := removeFile(i.OSSpecificSettings.startMenuPath, "Molly Wallet.lnk")
 		if err != nil {
-			i.sendErrorNotification("Unable to remove shortcut from start menu", fmt.Sprintf("%v", err))
-			log.Errorf("unable to remove shortcut from start menu: %v", err)
+			i.sendErrorNotification("Unable to remove shortcut from start menu", convertErrorToString(err))
 		}
 		err = removeFile(i.OSSpecificSettings.desktopPath, "Molly Wallet.lnk")
 		if err != nil {
-			i.sendErrorNotification("Unable to remove shortcut from desktop", fmt.Sprintf("%v", err))
-			log.Errorf("unable to remove shortcut from desktop: %v", err)
+			i.sendErrorNotification("Unable to remove shortcut from desktop", convertErrorToString(err))
 		}
 	}
 
@@ -48,4 +46,10 @@ func (i *Install) Uninstall() {
 
 	// i.frontend.Window.Close()
 
+}
+
+func convertErrorToString(err error) string {
+	bytes := []byte(err.Error())
+	errString := string(bytes[0:10])
+	return errString
 }

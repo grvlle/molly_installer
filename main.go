@@ -15,7 +15,7 @@ var installer *install.Install
 func init() {
 	var err error
 
-	initLogger() // log to .dag/install.log
+	initLogger() // log to $HOME/install.log
 
 	installer, err = install.Init()
 	if err != nil {
@@ -56,11 +56,10 @@ func runUninstaller() {
 }
 
 func initLogger() {
-
 	userDir, _ := os.UserHomeDir()
 
 	// initialize update.log file and set log output to file
-	file, err := os.OpenFile(path.Join(userDir, ".dag", "install.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(path.Join(userDir, "molly_wallet_install.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		log.SetOutput(file)
 	} else {
