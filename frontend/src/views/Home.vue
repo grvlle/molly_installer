@@ -19,7 +19,7 @@
         </tr>
         </table>
         <br />
-        These packages will also be removed as part of the Unistallation proceedure. So make sure to leverage this installer when you which to remove Molly wallet from your system.
+        These packages will also be removed as part of the Unistallation proceedure. So make sure to leverage this installer when you wish to remove Molly wallet from your system.
         </p>
         </div>
         <div class="component"><NavButtons /></div>

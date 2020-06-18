@@ -1,7 +1,7 @@
 package install
 
 import (
-	"os"
+	"fmt"
 	"path"
 	"runtime"
 
@@ -20,7 +20,7 @@ func (i *Install) Uninstall() {
 
 	err := removeFiles(i.dagFolderPath, files)
 	if err != nil {
-		log.Errorf("unable to remove all files: %v", err)
+		i.sendErrorNotification("Unable to remove all files", fmt.Sprintf("%v", err))
 	}
 
 	folders := make([]string, 3)
@@ -28,16 +28,18 @@ func (i *Install) Uninstall() {
 
 	err = removeFolders(folders)
 	if err != nil {
-		log.Errorf("unable to remove all folders: %v", err)
+		i.sendErrorNotification("Unable to remove all folders", fmt.Sprintf("%v", err))
 	}
 
 	if runtime.GOOS == "windows" {
 		err := removeFile(i.OSSpecificSettings.startMenuPath, "Molly Wallet.lnk")
 		if err != nil {
+			i.sendErrorNotification("Unable to remove shortcut from start menu", fmt.Sprintf("%v", err))
 			log.Errorf("unable to remove shortcut from start menu: %v", err)
 		}
 		err = removeFile(i.OSSpecificSettings.desktopPath, "Molly Wallet.lnk")
 		if err != nil {
+			i.sendErrorNotification("Unable to remove shortcut from desktop", fmt.Sprintf("%v", err))
 			log.Errorf("unable to remove shortcut from desktop: %v", err)
 		}
 	}
@@ -46,41 +48,4 @@ func (i *Install) Uninstall() {
 
 	// i.frontend.Window.Close()
 
-}
-
-func removeFile(filePath string, file string) error {
-	if fileExists(path.Join(filePath, file)) && file != "" {
-		err := os.Remove(path.Join(filePath, file))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func removeFiles(filePath string, files []string) error {
-	for _, file := range files {
-		if fileExists(path.Join(filePath, file)) && file != "" {
-			err := os.Remove(path.Join(filePath, file))
-			if err != nil {
-				return err
-			}
-
-		}
-	}
-	return nil
-}
-
-func removeFolders(folders []string) error {
-	for _, folder := range folders {
-		if fileExists(folder) && folder != "" {
-			if fileExists(folder) {
-				err := os.Remove(folder)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }

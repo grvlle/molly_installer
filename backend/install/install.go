@@ -3,10 +3,10 @@ package install
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artdarek/go-unzip"
 	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails"
 )
@@ -76,7 +75,6 @@ func (i *Install) Run() {
 		}
 	}
 
-	initLogger()         // log to .dag/install.log
 	go i.startProgress() // Runs a go routine that increments the progress bar
 
 	// Install Java on Windows if not detected
@@ -167,19 +165,6 @@ func (i *Install) Run() {
 
 }
 
-func initLogger() {
-	// initialize update.log file and set log output to file
-	file, err := os.OpenFile(path.Join(getDefaultDagFolderPath(), "install.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		log.SetOutput(file)
-	} else {
-		log.Info("Failed to log to file, using default stderr")
-	}
-
-	// Only log the warning severity or above.
-	log.SetLevel(log.InfoLevel)
-}
-
 // PrepareFS removes uneccesary artifacts from the installation process and creates .dag folder if missing
 func (i *Install) PrepareFS() error {
 	// files slice will house the files that are to be removed before proceeding with installation.
@@ -223,6 +208,54 @@ func (i *Install) DownloadAppBinary() (string, error) {
 	}
 
 	return filePath, nil
+}
+
+// CheckAndFetchWalletCLI will download the cl-wallet dependencies from
+// the official Constellation Repo
+func (i *Install) checkAndFetchWalletCLI() error {
+
+	var downloadComplete bool
+
+	keytoolPath := path.Join(i.dagFolderPath, "cl-keytool.jar")
+	walletPath := path.Join(i.dagFolderPath, "cl-wallet.jar")
+
+	err := i.fetchWalletJar("cl-keytool.jar", keytoolPath)
+	if err != nil {
+		log.Errorln("Unable to fetch or store cl-keytool.jar", err)
+		return err
+	}
+
+	err = i.fetchWalletJar("cl-wallet.jar", walletPath)
+	if err != nil {
+		log.Errorln("Unable to fetch or store cl-wallet.jar", err)
+		return err
+	}
+
+	if fileExists(keytoolPath) && fileExists(walletPath) {
+		downloadComplete = true
+	} else {
+		downloadComplete = false
+	}
+
+	if !downloadComplete {
+		err := errors.New("download failed")
+		return err
+	}
+	return err
+
+}
+
+func (i *Install) fetchWalletJar(filename string, filePath string) error {
+	url := "https://github.com/Constellation-Labs/constellation/releases/download/v2.6.0/" + filename
+	log.Infof("Constructed the following URL: %s", url)
+
+	filePath = path.Join(i.dagFolderPath, filename)
+	err := downloadFile(url, filePath)
+	if err != nil {
+		return fmt.Errorf("unable to download remote checksum: %v", err)
+	}
+
+	return err
 }
 
 // VerifyChecksum takes a file path and will check the file sha256 checksum against the checksum included
@@ -342,144 +375,3 @@ func (i *Install) CleanUp() error {
 	}
 	return nil
 }
-
-func downloadFile(url, filePath string) error {
-
-	tmpFilePath := filePath + ".tmp"
-	out, err := os.Create(tmpFilePath)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if _, err = io.Copy(out, resp.Body); err != nil {
-		return err
-	}
-
-	out.Close() // Close file to rename
-
-	if err = os.Rename(tmpFilePath, filePath); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getDefaultDagFolderPath() string {
-	userDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Errorf("Unable to detect UserHomeDir: %v", err)
-		return ""
-	}
-	return userDir + "/.dag"
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !os.IsNotExist(err)
-}
-
-func copy(src string, dst string) error {
-	// Read all content of src to data
-	data, err := ioutil.ReadFile(src)
-	if err != nil {
-		return err
-	}
-
-	// Write data to dst
-	err = ioutil.WriteFile(dst, data, 0755)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Unzips archive to dstPath, returns path to wallet binary
-func unzipArchive(zippedArchive, dstPath string) (*unzippedContents, error) {
-
-	uz := unzip.New(zippedArchive, path.Join(dstPath, "new_build"))
-	err := uz.Extract()
-	if err != nil {
-		return nil, err
-	}
-	var fileExt string
-	if runtime.GOOS == "windows" {
-		fileExt = ".exe"
-	}
-
-	contents := &unzippedContents{
-		mollyBinaryPath:  path.Join(dstPath, "new_build", "mollywallet"+fileExt),
-		updateBinaryPath: path.Join(dstPath, "new_build", "update"+fileExt),
-	}
-
-	return contents, err
-}
-
-// getUserOS returns the users OS, the file extension of executables and path to put molly wallet binary for said OS
-func getOSSpecificSettings() *settings {
-
-	s := &settings{}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Errorf("unable to locate home dir: %v", err)
-	}
-
-	switch os := runtime.GOOS; os {
-
-	case "darwin":
-		s = &settings{
-			osBuild:    "darwin",
-			fileExt:    "",
-			binaryPath: path.Join("usr", "local", "bin", "mollywallet"),
-		}
-
-	case "linux":
-		s = &settings{
-			osBuild:    "linux",
-			fileExt:    "",
-			binaryPath: path.Join("usr", "local", "bin", "mollywallet"),
-		}
-
-	case "windows":
-		s = &settings{
-			osBuild:       "windows",
-			fileExt:       ".exe",
-			binaryPath:    path.Join(getDefaultDagFolderPath(), "mollywallet.exe"),
-			startMenuPath: path.Join(homeDir, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs"),
-			desktopPath:   path.Join(homeDir, "Desktop"),
-			shortcutPath:  getDefaultDagFolderPath() + "/Molly Wallet.lnk",
-		}
-
-	default:
-		s = &settings{
-			osBuild:    "unsupported",
-			fileExt:    "",
-			binaryPath: getDefaultDagFolderPath(),
-		}
-
-	}
-
-	return s
-}
-
-// setEnviornment sets env vars permenantly on Windows, but requires administrator access.
-// func setEnvironment(key string, value string) {
-// 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\ControlSet001\Control\Session Manager\Environment`, registry.ALL_ACCESS)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer k.Close()
-
-// 	err = k.SetStringValue(key, value)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
