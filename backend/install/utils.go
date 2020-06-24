@@ -184,7 +184,7 @@ func getOSSpecificSettings() *settings {
 		s = &settings{
 			osBuild:    "darwin",
 			fileExt:    "",
-			binaryPath: path.Join("usr", "local", "bin", "mollywallet"),
+			binaryPath: path.Join(homeDir, "Applications", "mollywallet"),
 		}
 
 	case "linux":
