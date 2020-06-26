@@ -79,7 +79,7 @@ func removeFolders(folders []string) error {
 	for _, folder := range folders {
 		if fileExists(folder) && folder != "" {
 			if fileExists(folder) {
-				err := os.Remove(folder)
+				err := os.RemoveAll(folder)
 				if err != nil {
 					return err
 				}

@@ -72,7 +72,7 @@ func convertErrorToString(err error) string {
 
 	if len(errString) >= 15 {
 		bytes := []byte(errString)
-		return string(bytes[0:15])
+		return string(bytes[0:55])
 	}
 
 	return errString
