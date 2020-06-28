@@ -54,8 +54,6 @@ func (i *Install) Uninstall() {
 
 	i.sendSuccessNotification("Success!", "Molly wallet has been successfully uninstalled.")
 
-	// i.frontend.Window.Close()
-
 }
 
 // strip non-regex complient chars and return clean error string

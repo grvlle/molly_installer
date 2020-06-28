@@ -10,6 +10,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f // indirect
+	github.com/juju/testing v0.0.0-20200608005635-e4eedbc6f7aa // indirect
 	github.com/leaanthony/mewn v0.10.7
 	github.com/leaanthony/slicer v1.4.1 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect

@@ -132,7 +132,7 @@ func fileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func copy(src string, dst string) error {
+func copyFile(src string, dst string) error {
 	// Read all content of src to data
 	data, err := ioutil.ReadFile(src)
 	if err != nil {
@@ -163,6 +163,7 @@ func unzipArchive(zippedArchive, dstPath string) (*unzippedContents, error) {
 	contents := &unzippedContents{
 		mollyBinaryPath:  path.Join(dstPath, "new_build", "mollywallet"+fileExt),
 		updateBinaryPath: path.Join(dstPath, "new_build", "update"+fileExt),
+		mollyMacOSApp:    path.Join(dstPath, "new_build", "Molly - Constellation Desktop Wallet.app"),
 	}
 
 	return contents, err
@@ -182,9 +183,10 @@ func getOSSpecificSettings() *settings {
 
 	case "darwin":
 		s = &settings{
-			osBuild:    "darwin",
-			fileExt:    "",
-			binaryPath: path.Join(homeDir, "Applications", "mollywallet"),
+			osBuild:      "darwin",
+			fileExt:      "",
+			binaryPath:   path.Join(getDefaultDagFolderPath(), "mollywallet"),
+			shortcutPath: path.Join(homeDir, "Applications", "Molly - Constellation Desktop Wallet.app"),
 		}
 
 	case "linux":

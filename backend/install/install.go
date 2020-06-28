@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails"
 )
@@ -41,6 +42,7 @@ type settings struct {
 type unzippedContents struct {
 	mollyBinaryPath  string
 	updateBinaryPath string
+	mollyMacOSApp    string
 }
 
 // Init initializes the Install struct
@@ -311,11 +313,11 @@ func (i *Install) VerifyChecksum(filePathZip string) (bool, error) {
 
 // CopyAppBinaries copies the update module and molly binary from the unzipped package to the .dag folder.
 func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
-	err := copy(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
+	err := copyFile(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
 	if err != nil {
 		for n := 5; n > 0; n-- {
 			time.Sleep(time.Duration(n) * time.Second)
-			err = copy(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
+			err = copyFile(contents.mollyBinaryPath, i.OSSpecificSettings.binaryPath)
 			if err == nil {
 				break
 			} else if err != nil && n == 0 {
@@ -325,9 +327,15 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 	}
 	// Replace old update binary with the new one
 	if fileExists(contents.updateBinaryPath) {
-		err = copy(contents.updateBinaryPath, i.dagFolderPath+"/update"+i.OSSpecificSettings.fileExt)
+		err = copyFile(contents.updateBinaryPath, i.dagFolderPath+"/update"+i.OSSpecificSettings.fileExt)
 		if err != nil {
-			return fmt.Errorf("unable to copy update binary to .dag folder: %v", err)
+			return fmt.Errorf("unable to copyFile update binary to .dag folder: %v", err)
+		}
+	}
+	if runtime.GOOS == "darwin" {
+		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath)
+		if err != nil {
+			return fmt.Errorf("unable to copyFile Molly - Constellation Desktop Wallet.app to Applications folder: %v", err)
 		}
 	}
 
@@ -336,13 +344,13 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 		if err != nil {
 			return fmt.Errorf("unable to create app shortcut: %v", err)
 		}
-		err = copy(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.startMenuPath, "Molly Wallet.lnk"))
+		err = copyFile(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.startMenuPath, "Molly Wallet.lnk"))
 		if err != nil {
-			return fmt.Errorf("unable to copy app shortcut to start menu: %v", err)
+			return fmt.Errorf("unable to copyFile app shortcut to start menu: %v", err)
 		}
-		err = copy(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.desktopPath, "Molly Wallet.lnk"))
+		err = copyFile(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.desktopPath, "Molly Wallet.lnk"))
 		if err != nil {
-			return fmt.Errorf("unable to copy app shortcut to desktop: %v", err)
+			return fmt.Errorf("unable to copyFile app shortcut to desktop: %v", err)
 		}
 	}
 
