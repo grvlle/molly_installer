@@ -183,6 +183,14 @@ func (i *Install) PrepareFS() error {
 		}
 	}
 
+	// Remove the .app folder on MacOS
+	if runtime.GOOS == "darwin" && fileExists(i.OSSpecificSettings.shortcutPath) {
+		err := os.RemoveAll(i.OSSpecificSettings.shortcutPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -329,13 +337,13 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 	if fileExists(contents.updateBinaryPath) {
 		err = copyFile(contents.updateBinaryPath, i.dagFolderPath+"/update"+i.OSSpecificSettings.fileExt)
 		if err != nil {
-			return fmt.Errorf("unable to copyFile update binary to .dag folder: %v", err)
+			return fmt.Errorf("unable to copy update binary to .dag folder: %v", err)
 		}
 	}
 	if runtime.GOOS == "darwin" {
 		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath)
 		if err != nil {
-			return fmt.Errorf("unable to copyFile Molly - Constellation Desktop Wallet.app to Applications folder: %v", err)
+			return fmt.Errorf("unable to copy Molly - Constellation Desktop Wallet.app to Applications folder: %v", err)
 		}
 	}
 
@@ -346,11 +354,11 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 		}
 		err = copyFile(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.startMenuPath, "Molly Wallet.lnk"))
 		if err != nil {
-			return fmt.Errorf("unable to copyFile app shortcut to start menu: %v", err)
+			return fmt.Errorf("unable to copy app shortcut to start menu: %v", err)
 		}
 		err = copyFile(i.OSSpecificSettings.shortcutPath, path.Join(i.OSSpecificSettings.desktopPath, "Molly Wallet.lnk"))
 		if err != nil {
-			return fmt.Errorf("unable to copyFile app shortcut to desktop: %v", err)
+			return fmt.Errorf("unable to copy app shortcut to desktop: %v", err)
 		}
 	}
 
@@ -360,6 +368,11 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 // LaunchAppBinary executes the new molly binary
 func (i *Install) LaunchAppBinary() error {
 	cmd := exec.Command(i.OSSpecificSettings.binaryPath)
+
+	if runtime.GOOS == "darwin" {
+		cmd = exec.Command(path.Join(i.OSSpecificSettings.shortcutPath, "Contents", "MacOS", "mollywallet"))
+	}
+
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("unable to execute run command for Molly Wallet: %v", err)

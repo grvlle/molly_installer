@@ -14,6 +14,7 @@ require (
 	github.com/leaanthony/mewn v0.10.7
 	github.com/leaanthony/slicer v1.4.1 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/otiai10/copy v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/wailsapp/wails v1.7.0-pre1

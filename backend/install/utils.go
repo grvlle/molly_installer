@@ -163,7 +163,7 @@ func unzipArchive(zippedArchive, dstPath string) (*unzippedContents, error) {
 	contents := &unzippedContents{
 		mollyBinaryPath:  path.Join(dstPath, "new_build", "mollywallet"+fileExt),
 		updateBinaryPath: path.Join(dstPath, "new_build", "update"+fileExt),
-		mollyMacOSApp:    path.Join(dstPath, "new_build", "Molly - Constellation Desktop Wallet.app"),
+		mollyMacOSApp:    path.Join(dstPath, "new_build", "MollyWallet.app"),
 	}
 
 	return contents, err
@@ -186,7 +186,7 @@ func getOSSpecificSettings() *settings {
 			osBuild:      "darwin",
 			fileExt:      "",
 			binaryPath:   path.Join(getDefaultDagFolderPath(), "mollywallet"),
-			shortcutPath: path.Join(homeDir, "Applications", "Molly - Constellation Desktop Wallet.app"),
+			shortcutPath: path.Join(homeDir, "Applications", "MollyWallet.app"),
 		}
 
 	case "linux":
