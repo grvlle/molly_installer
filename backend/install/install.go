@@ -341,7 +341,7 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 		}
 	}
 	if runtime.GOOS == "darwin" {
-		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath)
+		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath, copy.Options{AddPermission: 0777})
 		if err != nil {
 			return fmt.Errorf("unable to copy Molly - Constellation Desktop Wallet.app to Applications folder: %v", err)
 		}
