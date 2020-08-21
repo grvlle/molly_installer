@@ -186,7 +186,7 @@ func (i *Install) PrepareFS() error {
 
 	// create a new .dag folder with the right permissions
 	if !fileExists(i.dagFolderPath) {
-		err := os.Mkdir(i.dagFolderPath, os.FileMode(755))
+		err := os.Mkdir(i.dagFolderPath, os.FileMode(766))
 		if err != nil {
 			i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
 			time.Sleep(10 * time.Second)
