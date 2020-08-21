@@ -68,21 +68,12 @@ func Init() (*Install, error) {
 func (i *Install) Run() {
 	var err error
 
-	if !fileExists(i.dagFolderPath) {
-		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
-		if err != nil {
-			i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
-			time.Sleep(10 * time.Second)
-			log.Fatalf("Unable to prepare filesystem: %v", err)
-		}
-	}
-
 	go i.startProgress() // Runs a go routine that increments the progress bar
 
 	// Install Java on Windows if not detected
 	i.updateProgress(8, "Checking Java Installation...")
 	if runtime.GOOS == "windows" && !javaInstalled() {
-		i.updateProgress(10, "Java not found. Installing Java...")
+		i.updateProgress(10, "Java not found. Installing Java (This may take some time)...")
 		err = installJava()
 		if err != nil {
 			i.sendErrorNotification("Unable to install Java", fmt.Sprintf("%v", err))
@@ -180,6 +171,26 @@ func (i *Install) PrepareFS() error {
 		err := os.RemoveAll(i.tmpFolderPath)
 		if err != nil {
 			return err
+		}
+	}
+
+	// remove the old .dag folder
+	folders := make([]string, 1)
+	folders = append(folders, path.Join(i.dagFolderPath))
+
+	err := removeFolders(folders)
+	if err != nil {
+		i.sendErrorNotification("Error:", convertErrorToString(err))
+		log.Errorf("Error: %v", err)
+	}
+
+	// create a new .dag folder with the right permissions
+	if !fileExists(i.dagFolderPath) {
+		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
+		if err != nil {
+			i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
+			time.Sleep(10 * time.Second)
+			log.Fatalf("Unable to prepare filesystem: %v", err)
 		}
 	}
 
