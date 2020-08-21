@@ -186,7 +186,7 @@ func (i *Install) PrepareFS() error {
 
 	// create a new .dag folder with the right permissions
 	if !fileExists(i.dagFolderPath) {
-		err := os.Mkdir(i.dagFolderPath, os.FileMode(777))
+		err := os.Mkdir(i.dagFolderPath, os.FileMode(755))
 		if err != nil {
 			i.sendErrorNotification("Unable to prepare filesystem", fmt.Sprintf("%v", err))
 			time.Sleep(10 * time.Second)
@@ -352,7 +352,7 @@ func (i *Install) CopyAppBinaries(contents *unzippedContents) error {
 		}
 	}
 	if runtime.GOOS == "darwin" {
-		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath, copy.Options{AddPermission: 0777})
+		err := copy.Copy(contents.mollyMacOSApp, i.OSSpecificSettings.shortcutPath, copy.Options{AddPermission: 0755})
 		if err != nil {
 			return fmt.Errorf("unable to copy Molly - Constellation Desktop Wallet.app to Applications folder: %v", err)
 		}
