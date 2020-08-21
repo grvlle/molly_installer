@@ -178,10 +178,12 @@ func (i *Install) PrepareFS() error {
 	folders := make([]string, 1)
 	folders = append(folders, path.Join(i.dagFolderPath))
 
-	err := removeFolders(folders)
-	if err != nil {
-		i.sendErrorNotification("Error:", convertErrorToString(err))
-		log.Errorf("Error: %v", err)
+	if len(folders) != 0 {
+		err := removeFolders(folders)
+		if err != nil {
+			i.sendErrorNotification("Error:", convertErrorToString(err))
+			log.Errorf("Error: %v", err)
+		}
 	}
 
 	// create a new .dag folder with the right permissions
